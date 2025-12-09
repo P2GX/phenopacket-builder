@@ -1,0 +1,14 @@
+[package]
+name = "phenopacket-builder"
+version = "0.1.0-dev0"
+edition = "2021"
+
+homepage = "https://github.com/P2GX/phenopacket-builder"
+repository = "https://github.com/P2GX/phenopacket-builder"
+readme = "README.md"
+license-file = "LICENSE"
+
+authors = ["Daniel Danis <daniel.gordon.danis@protonmail.com>"]
+
+[dependencies]
+phenopackets = "0.2.2-post2"
