@@ -12,3 +12,4 @@ authors = ["Daniel Danis <daniel.gordon.danis@protonmail.com>"]
 
 [dependencies]
 phenopackets = "0.2.2-post2"
+prost-types = "0.14.1"
