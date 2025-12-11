@@ -1,7 +1,8 @@
 use crate::{Build, Buildable, Set, Unset};
 use phenopackets::schema::v2::core::time_element::Element;
+use phenopackets::schema::v2::core::vital_status::Status;
 use phenopackets::schema::v2::core::{
-    Age, GestationalAge, Individual, KaryotypicSex, OntologyClass, Sex, TimeElement,
+    Age, GestationalAge, Individual, KaryotypicSex, OntologyClass, Sex, TimeElement, VitalStatus,
 };
 use std::marker::PhantomData;
 
@@ -136,13 +137,7 @@ pub struct IndividualBuilder<T = Unset> {
     alternate_ids: Vec<String>,
     date_of_birth: Option<prost_types::Timestamp>,
     time_at_last_encounter: Option<TimeElement>,
-    /*
-    // TODO:
-    // Vital status of the individual. If not present it is assumed that the individual is alive. If present it will
-    // default to 'false' i.e. the individual was alive when the data was collected.
-    // ARGO mapping donor::vital_status
-    VitalStatus vital_status = 5;
-       */
+    vital_status: Option<VitalStatus>,
     sex: Sex,
     karyotypic_sex: KaryotypicSex,
     gender: Option<OntologyClass>,
@@ -179,6 +174,31 @@ impl<T> IndividualBuilder<T> {
         time_at_last_encounter: impl Build<TimeElement>,
     ) -> Self {
         self.time_at_last_encounter = Some(time_at_last_encounter.build());
+        self
+    }
+
+    pub fn vital_status(mut self, vital_status: impl Build<VitalStatus>) -> Self {
+        self.vital_status = Some(vital_status.build());
+        self
+    }
+
+    pub fn deceased(mut self) -> Self {
+        self.vital_status = Some(VitalStatus::builder().deceased().build());
+        self
+    }
+
+    pub fn deceased_at(mut self, time_of_death: impl Into<TimeElement>) -> Self {
+        self.vital_status = Some(
+            VitalStatus::builder()
+                .deceased()
+                .time_of_death(time_of_death)
+                .build(),
+        );
+        self
+    }
+
+    pub fn alive(mut self) -> Self {
+        self.vital_status = Some(VitalStatus::builder().alive().build());
         self
     }
 
@@ -262,6 +282,7 @@ impl IndividualBuilder<Unset> {
             alternate_ids: self.alternate_ids,
             date_of_birth: self.date_of_birth,
             time_at_last_encounter: self.time_at_last_encounter,
+            vital_status: self.vital_status,
             sex: self.sex,
             karyotypic_sex: self.karyotypic_sex,
             gender: self.gender,
@@ -281,7 +302,7 @@ impl Build<Individual> for IndividualBuilder<Set> {
             alternate_ids: self.alternate_ids,
             date_of_birth: self.date_of_birth,
             time_at_last_encounter: self.time_at_last_encounter,
-            vital_status: None, // TODO
+            vital_status: self.vital_status,
             sex: self.sex.into(),
             karyotypic_sex: self.karyotypic_sex.into(),
             gender: self.gender,
@@ -537,6 +558,88 @@ impl Build<GestationalAge> for GestationalAgeBuilder<Set> {
         GestationalAge {
             weeks: self.weeks.expect("weeks must have been set"),
             days: self.days.unwrap_or(0),
+        }
+    }
+}
+
+#[derive(Debug, Default, Clone, PartialEq)]
+pub struct VitalStatusBuilder<T = Unset> {
+    status: Option<Status>,
+    time_of_death: Option<TimeElement>,
+    cause_of_death: Option<OntologyClass>,
+    survival_time_in_days: Option<u32>,
+    data: PhantomData<T>,
+}
+
+impl<T> VitalStatusBuilder<T> {
+    pub fn status(self, status: impl Into<Status>) -> VitalStatusBuilder<Set> {
+        VitalStatusBuilder {
+            status: Some(status.into()),
+            time_of_death: self.time_of_death,
+            cause_of_death: self.cause_of_death,
+            survival_time_in_days: self.survival_time_in_days,
+            data: PhantomData,
+        }
+    }
+
+    pub fn alive(self) -> VitalStatusBuilder<Set> {
+        self.status(Status::Alive)
+    }
+
+    pub fn deceased(self) -> VitalStatusBuilder<Set> {
+        self.status(Status::Deceased)
+    }
+
+    pub fn time_of_death(mut self, time_of_death: impl Into<TimeElement>) -> VitalStatusBuilder<T> {
+        self.time_of_death = Some(time_of_death.into());
+        self
+    }
+
+    pub fn time_of_death_at_age(mut self, age: impl Into<Age>) -> VitalStatusBuilder<T> {
+        self.time_of_death = Some(TimeElement {
+            element: Some(Element::Age(age.into())),
+        });
+        self
+    }
+
+    pub fn time_of_death_at_gestational_age(
+        mut self,
+        gestational_age: impl Into<GestationalAge>,
+    ) -> VitalStatusBuilder<T> {
+        self.time_of_death = Some(TimeElement {
+            element: Some(Element::GestationalAge(gestational_age.into())),
+        });
+        self
+    }
+
+    pub fn cause_of_death(
+        mut self,
+        cause_of_death: impl Into<OntologyClass>,
+    ) -> VitalStatusBuilder<T> {
+        self.cause_of_death = Some(cause_of_death.into());
+        self
+    }
+
+    pub fn survival_time_in_days(
+        mut self,
+        survival_time_in_days: impl Into<u32>,
+    ) -> VitalStatusBuilder<T> {
+        self.survival_time_in_days = Some(survival_time_in_days.into());
+        self
+    }
+}
+
+impl Buildable for VitalStatus {
+    type Builder = VitalStatusBuilder;
+}
+
+impl Build<VitalStatus> for VitalStatusBuilder<Set> {
+    fn build(self) -> VitalStatus {
+        VitalStatus {
+            status: self.status.expect("status must have been set").into(),
+            time_of_death: self.time_of_death,
+            cause_of_death: self.cause_of_death,
+            survival_time_in_days: self.survival_time_in_days.unwrap_or_default(),
         }
     }
 }

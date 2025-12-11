@@ -1,7 +1,10 @@
 /// Examples with Phenopacket Schema v2.
 use phenopacket_builder::{Build, Buildable};
 use phenopackets::schema::v2::core::time_element::Element;
-use phenopackets::schema::v2::core::{Individual, KaryotypicSex, OntologyClass, Sex, TimeElement};
+use phenopackets::schema::v2::core::vital_status::Status;
+use phenopackets::schema::v2::core::{
+    Age, Individual, KaryotypicSex, OntologyClass, Sex, TimeElement, VitalStatus,
+};
 use prost_types::Timestamp;
 
 #[test]
@@ -25,6 +28,7 @@ fn build_individual() {
                 .expect("the timestamp should be well formatted"),
         )
         .time_at_last_encounter(TimeElement::builder().age_iso8601duration("P3Y4M"))
+        .alive()
         .male()
         .karyotypic_sex_xy()
         .homo_sapiens()
@@ -39,12 +43,17 @@ fn build_individual() {
     );
     assert_eq!(
         individual.time_at_last_encounter.unwrap().element.unwrap(),
-        Element::Timestamp(
-            Timestamp::builder()
-                .iso8601timestamp("2025-12-03")
-                .unwrap()
-                .build()
-        )
+        Element::Age(Age::builder().iso8601duration("P3Y4M").build())
+    );
+
+    assert_eq!(
+        individual.vital_status,
+        Some(VitalStatus {
+            status: Status::Alive.into(),
+            time_of_death: None,
+            cause_of_death: None,
+            survival_time_in_days: 0,
+        })
     );
 
     assert_eq!(&individual.sex, &Sex::Male.into());
