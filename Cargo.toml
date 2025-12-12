@@ -1,6 +1,6 @@
 [package]
 name = "phenopacket-builder"
-version = "0.1.0-dev0"
+version = "0.1.0"
 edition = "2021"
 
 homepage = "https://github.com/P2GX/phenopacket-builder"
