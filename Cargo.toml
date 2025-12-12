@@ -1,6 +1,8 @@
 [package]
 name = "phenopacket-builder"
 version = "0.1.0"
+description = "Streamline programmatic assembly of Phenopacket Schema building blocks"
+keywords = ["phenopackets", "phenotype", "ontology", "bioinformatics", "build"]
 edition = "2021"
 
 homepage = "https://github.com/P2GX/phenopacket-builder"
